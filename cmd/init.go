@@ -104,6 +104,7 @@ func runInit(cmd *cobra.Command, args []string) error {
     "LICENSE":    licenses[choice],
     ".gitignore": viper.GetString("defaults.gitignore"),
     "info.yml":   viper.GetString("defaults.info"),
+    "commitMessage.yml":   viper.GetString("defaults.commitMessage"),
   }
 
   // 6. Copiar cada plantilla con precaución
@@ -119,6 +120,7 @@ func runInit(cmd *cobra.Command, args []string) error {
   fmt.Printf("   • Licencia: %s\n", choice)
   fmt.Println("   • .gitignore")
   fmt.Println("   • info.yml")
+  fmt.Println("   • commitMessage.yml")
   fmt.Println("   • LICENSE")
   return nil
 }
