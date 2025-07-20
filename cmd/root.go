@@ -45,7 +45,7 @@ func initConfig() {
         viper.SetConfigType("yaml")
         viper.SetDefault("templates_dir", filepath.Join(home, ".config", "gitz", "templates"))
         viper.SetDefault("defaults.gitignore", "gitignore")
-        viper.SetDefault("defaults.datos", "datos")
+        viper.SetDefault("defaults.info.yml", "info")
         // licencias
         viper.SetDefault("licenses", map[string]string{
             "GNU GPLv3": "licenses/GPL-3.0.txt",
