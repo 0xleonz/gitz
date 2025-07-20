@@ -1,6 +1,6 @@
 description: 'Git wrapper in go with interactive buubletea menus.'
 ramas:
-  - origin
+  - gitlab
   - github
 branches:
   - main
