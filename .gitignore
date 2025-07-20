@@ -4,3 +4,5 @@ go.mod
 build
 **/**doc.md
 output.txt
+commitMessage.yml
+info.yml
