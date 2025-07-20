@@ -86,3 +86,50 @@ func buildPushPairs(info *config.Info) []PushPair {
 		for _, r := range info.Ramas {
 			for _, b := range info.Branches {
 				pairs = append(pairs, PushPair{
+					Branch: b,
+					Remote: r,
+				})
+			}
+		}
+	}
+
+	return pairs
+}
+
+func filterPairs(pairs []PushPair, remote, branch string) []PushPair {
+	var filtered []PushPair
+	for _, p := range pairs {
+		if (remote == "" || p.Remote == remote) &&
+			(branch == "" || p.Branch == branch) {
+			filtered = append(filtered, p)
+		}
+	}
+	return filtered
+}
+
+func findRepoRoot() (string, error) {
+	dir, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+	for {
+		if _, err := os.Stat(filepath.Join(dir, ".git")); err == nil {
+			return dir, nil
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			break
+		}
+		dir = parent
+	}
+	return "", fmt.Errorf("no se encontró .git en ningún directorio padre")
+}
+
+func init() {
+	pushCmd.Flags().BoolVar(&dryRun, "dry-run", false, "Muestra los comandos sin ejecutarlos")
+	pushCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Muestra salida detallada")
+	pushCmd.Flags().StringVar(&filterRemote, "remote", "", "Filtra por remoto")
+	pushCmd.Flags().StringVar(&filterBranch, "branch", "", "Filtra por rama")
+	rootCmd.AddCommand(pushCmd)
+}
+

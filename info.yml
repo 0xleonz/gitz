@@ -5,9 +5,9 @@ ramas:
 branches:
   - main
 # Para subir ramas especificas a remotos especificos
-remote-branches:
-  - branch: dev
-    remote: origin
-  - branch: feat-x
-    remote: github
-
+# remote-branches:
+#   - branch: dev
+#     remote: origin
+#   - branch: feat-x
+#     remote: github
+#
