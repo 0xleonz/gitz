@@ -11,6 +11,16 @@ remotos de manera consistente.
 - Ejecuta `git push` a múltiples remotos de forma automática.
 - Soporte básico para comandos como `init` y `push`.
 
+## Commands
+
+```bash
+gitz init
+gitz message
+gitz push
+```
+
+```
+```
 ## Estructura del archivo `info.yml`
 
 ```yaml
