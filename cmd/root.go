@@ -62,7 +62,7 @@ func initConfig() {
     }
 
     if f := viper.ConfigFileUsed(); f != "" {
-        fmt.Fprintln(os.Stderr, "✅ usando config file:", f)
+        //fmt.Fprintln(os.Stderr, "✅ usando config file:", f)
     }
     viper.AutomaticEnv()
 }

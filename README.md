@@ -19,8 +19,6 @@ gitz message
 gitz push
 ```
 
-```
-```
 ## Estructura del archivo `info.yml`
 
 ```yaml

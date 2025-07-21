@@ -10,6 +10,7 @@ var (
 	Green   = "\033[38;5;114m"
 	Pink    = "\033[38;5;175m"
 	Reset   = "\033[0m"
+	Red = "\033[38;5;204m"
 )
 
 // Apply color to text
