@@ -27,10 +27,34 @@ var commitCmd = &cobra.Command{
 
 		path := filepath.Join(repoRoot, "commitMessage.yml")
 
+		// --- Modo corto: git commit -m "<mensaje>"
 		if shortMessage != "" {
+			if !isEmptyOrMissing(path) {
+				fmt.Println("⚠️ commitMessage.yml no está vacío. Podrías estar ignorando contenido valioso.")
+				data, _ := os.ReadFile(path)
+				fmt.Println("📝 Contenido actual:")
+				fmt.Println(strings.Repeat("─", 40))
+				fmt.Println(string(data))
+				fmt.Println(strings.Repeat("─", 40))
+
+				fmt.Print("¿Deseas limpiarlo ahora? (y/N): ")
+				var resp string
+				fmt.Scanln(&resp)
+				resp = strings.ToLower(strings.TrimSpace(resp))
+				if resp == "y" || resp == "s" {
+					if err := os.WriteFile(path, []byte{}, 0644); err != nil {
+						fmt.Println("⚠️ No se pudo limpiar commitMessage.yml:", err)
+					} else {
+						fmt.Println("🧹 commitMessage.yml limpiado.")
+					}
+				} else {
+					fmt.Println("⏭️ commitMessage.yml no fue limpiado.")
+				}
+			}
 			return gitCommit(shortMessage)
 		}
 
+		// --- Modo normal: usar commitMessage.yml
 		if isEmptyOrMissing(path) {
 			fmt.Println("📝 commitMessage.yml vacío o no existe. Ejecutando 'gitz message'...")
 			if err := utils.Call("message"); err != nil {
@@ -44,7 +68,17 @@ var commitCmd = &cobra.Command{
 		}
 
 		formatted := formatCommitMessage(msg)
-		return gitCommit(formatted)
+		if err := gitCommit(formatted); err != nil {
+			return err
+		}
+
+		if err := os.WriteFile(path, []byte{}, 0644); err != nil {
+			fmt.Println("⚠️ No se pudo limpiar commitMessage.yml:", err)
+		} else {
+			fmt.Println("🧹 commitMessage.yml limpiado.")
+		}
+
+		return nil
 	},
 }
 

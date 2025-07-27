@@ -39,3 +39,65 @@ func AppendToGitignore(entry string) error {
 	_, err = f.WriteString("\n" + entry + "\n")
 	return err
 }
+
+// ReadGitignoreLines devuelve un map con las líneas actuales del .gitignore
+func ReadGitignoreLines() (map[string]bool, error) {
+	lines := make(map[string]bool)
+
+	f, err := os.Open(".gitignore")
+	if err != nil {
+		return lines, err
+	}
+	defer f.Close()
+
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line != "" {
+			lines[line] = true
+		}
+	}
+	return lines, nil
+}
+
+func MergeGitignoreWithTemplate(templatePath string) error {
+	existing, _ := ReadGitignoreLines()
+
+	tplData, err := os.ReadFile(templatePath)
+	if err != nil {
+		return fmt.Errorf("no se pudo leer el template .gitignore: %w", err)
+	}
+
+	tplLines := strings.Split(string(tplData), "\n")
+	var toAdd []string
+
+	for _, line := range tplLines {
+		line = strings.TrimSpace(line)
+		if line == "" || existing[line] {
+			continue
+		}
+		toAdd = append(toAdd, line)
+	}
+
+	if len(toAdd) == 0 {
+		fmt.Println("✅ .gitignore ya está completo.")
+		return nil
+	}
+
+	f, err := os.OpenFile(".gitignore", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
+	if err != nil {
+		return fmt.Errorf("no se pudo abrir .gitignore para escribir: %w", err)
+	}
+	defer f.Close()
+
+	// Agrupamos con comentario si hay más de 1 línea
+	if len(toAdd) > 0 {
+		f.WriteString("\n# Añadido automáticamente desde template por gitz init\n")
+		for _, line := range toAdd {
+			f.WriteString(line + "\n")
+		}
+	}
+
+	fmt.Printf("📝 %d nuevas entradas agregadas a .gitignore\n", len(toAdd))
+	return nil
+}

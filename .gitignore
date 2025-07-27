@@ -4,6 +4,9 @@ go.mod
 build
 **/**doc.md
 output.txt
-commitMessage.yml
 info.yml
 old
+
+# Añadido automáticamente desde template por gitz init
+nextCommit
+commitMessage.yml
