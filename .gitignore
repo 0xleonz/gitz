@@ -1,6 +1,4 @@
 datos
-go.sum
-go.mod
 build
 **/**doc.md
 output.txt
