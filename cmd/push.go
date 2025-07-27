@@ -8,13 +8,15 @@ import (
 
 	"github.com/spf13/cobra"
 	"gitlab.com/0xleonz/gitz/internal/config"
+	"gitlab.com/0xleonz/gitz/internal/utils"
 )
 
 var (
-	dryRun  bool
-	verbose bool
+	dryRun       bool
+	verbose      bool
 	filterRemote string
 	filterBranch string
+	confirmPush  bool
 )
 
 var pushCmd = &cobra.Command{
@@ -45,6 +47,13 @@ var pushCmd = &cobra.Command{
 		}
 
 		for _, pair := range pairs {
+			if confirmPush {
+				fmt.Printf("¿Push a %s:%s? (y/n): ", pair.Remote, pair.Branch)
+				if utils.Ask() != "y" {
+					continue
+				}
+			}
+
 			fmt.Printf("[gitz] git push %s %s\n", pair.Remote, pair.Branch)
 			if dryRun {
 				continue
@@ -130,6 +139,7 @@ func init() {
 	pushCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Muestra salida detallada")
 	pushCmd.Flags().StringVar(&filterRemote, "remote", "", "Filtra por remoto")
 	pushCmd.Flags().StringVar(&filterBranch, "branch", "", "Filtra por rama")
+	pushCmd.Flags().BoolVarP(&confirmPush, "confirm", "c", false, "Pide confirmación antes de cada push")
+
 	rootCmd.AddCommand(pushCmd)
 }
-
