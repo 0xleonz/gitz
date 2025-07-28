@@ -1,8 +1,14 @@
-changes: []
-issue: 
-subject: Update message + commit
+changes:
+    - type: fix
+      summary: test 1
+    - type: chango
+      summary: test2
+issue: ""
+subject: ashdoiashod
 description:
-    - Commit dont wipe the messsage
-    - Update refresh
-    - Refactor messageReset
+    - dasdasdhas ds
+    - adas
+    - d
+    - asdas
+    - d
 footer: {}
