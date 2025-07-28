@@ -41,8 +41,9 @@ var commitCmd = &cobra.Command{
 				var resp string
 				fmt.Scanln(&resp)
 				resp = strings.ToLower(strings.TrimSpace(resp))
+
 				if resp == "y" || resp == "s" {
-					if err := os.WriteFile(path, []byte{}, 0644); err != nil {
+					if err := utils.ResetCommitMessage(path); err != nil {
 						fmt.Println("⚠️ No se pudo limpiar commitMessage.yml:", err)
 					} else {
 						fmt.Println("🧹 commitMessage.yml limpiado.")
@@ -72,7 +73,7 @@ var commitCmd = &cobra.Command{
 			return err
 		}
 
-		if err := os.WriteFile(path, []byte{}, 0644); err != nil {
+		if err := utils.ResetCommitMessage(path); err != nil {
 			fmt.Println("⚠️ No se pudo limpiar commitMessage.yml:", err)
 		} else {
 			fmt.Println("🧹 commitMessage.yml limpiado.")

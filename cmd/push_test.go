@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -23,4 +22,3 @@ func TestPushCmd(t *testing.T) {
 	output := out.String()
 	assert.Contains(t, output, "dry-run")
 }
-

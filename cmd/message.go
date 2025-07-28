@@ -13,14 +13,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-type CommitMessage struct {
-	Changes     []types.Change    `yaml:"changes"`
-	Issue       string            `yaml:"issue"`
-	Subject     string            `yaml:"subject"`
-	Description []string          `yaml:"description"`
-	Footer      map[string]string `yaml:"footer"`
-}
-
 var messageCmd = &cobra.Command{
 	Use:   "message",
 	Short: "Crea y maneja mensajes de commit enriquecidos",
@@ -36,7 +28,7 @@ func runTextEditor() error {
 	}
 	path := filepath.Join(repoRoot, "commitMessage.yml")
 
-	msg := CommitMessage{
+	msg := types.CommitMessage{
 		Changes:     []types.Change{},
 		Description: []string{},
 		Footer:      map[string]string{},

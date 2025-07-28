@@ -1,0 +1,8 @@
+changes: []
+issue: 
+subject: Update message + commit
+description:
+    - Commit dont wipe the messsage
+    - Update refresh
+    - Refactor messageReset
+footer: {}
