@@ -1,69 +1,97 @@
 package cmd
 
 import (
-    "fmt"
-    "os"
-    "path/filepath"
+	"fmt"
+	"os"
+	"path/filepath"
 
-    "github.com/spf13/cobra"
-    "github.com/spf13/viper"
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+	"gitlab.com/0xleonz/gitz/internal/git"
+	"gopkg.in/yaml.v3"
 )
 
 var cfgFile string
+var infoFile string
+var commitMsgFile string
 
 var rootCmd = &cobra.Command{
-    Use:   "gitz",
-    Short: "gitz: un wrapper ligero de git",
-    Long:  "gitz es tu CLI para interactuar con git más rápido.",
-    // Antes de cualquier subcomando, cargamos config:
-    PersistentPreRun: func(cmd *cobra.Command, args []string) {
-        initConfig()
-    },
+	Use:   "gitz",
+	Short: "gitz: un wrapper ligero de git",
+	Long:  "gitz es un CLI para interactuar con git más rápido.",
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		initConfig()
+	},
 }
 
-// Execute ejecuta el rootCmd.
 func Execute() {
-    if err := rootCmd.Execute(); err != nil {
-        os.Exit(1)
-    }
+	if err := rootCmd.Execute(); err != nil {
+		os.Exit(1)
+	}
 }
 
 func init() {
-    cobra.OnInitialize() // initConfig ya en PersistentPreRun
-    rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.config/gitz/config.yaml)")
+	cobra.OnInitialize()
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.config/gitz/config.yaml)")
 }
 
 func initConfig() {
-    if cfgFile != "" {
-        viper.SetConfigFile(cfgFile)
-    } else {
-        home, err := os.UserHomeDir()
-        cobra.CheckErr(err)
-        cfgDir := filepath.Join(home, ".config", "gitz")
-        viper.AddConfigPath(cfgDir)
-        viper.SetConfigName("config")
-        viper.SetConfigType("yaml")
-        viper.SetDefault("templates_dir", filepath.Join(home, ".config", "gitz", "templates"))
-        viper.SetDefault("defaults.gitignore", "gitignore")
-        viper.SetDefault("defaults.info.yml", "info")
-        // licencias
-        viper.SetDefault("licenses", map[string]string{
-            "GNU GPLv3": "licenses/GPL-3.0.txt",
-            "MIT":       "licenses/MIT.txt",
-        })
-        viper.SetDefault("default_license", "GNU GPLv3")
+	// Config global en ~/.config/gitz
+	if cfgFile != "" {
+		viper.SetConfigFile(cfgFile)
+	} else {
+		home, err := os.UserHomeDir()
+		cobra.CheckErr(err)
+		cfgDir := filepath.Join(home, ".config", "gitz")
+		viper.AddConfigPath(cfgDir)
+		viper.SetConfigName("config")
+		viper.SetConfigType("yaml")
+		viper.SetDefault("templates_dir", filepath.Join(cfgDir, "templates"))
+		viper.SetDefault("defaults.gitignore", "gitignore")
+		viper.SetDefault("defaults.info.yml", "info")
+		viper.SetDefault("licenses", map[string]string{
+			"GNU GPLv3": "licenses/GPL-3.0.txt",
+			"MIT":       "licenses/MIT.txt",
+		})
+		viper.SetDefault("default_license", "GNU GPLv3")
 
-        if err := viper.ReadInConfig(); err != nil {
-            fmt.Fprintln(os.Stderr, "⚠️  no se encontró config, creando en", cfgDir)
-            os.MkdirAll(cfgDir, 0o755)
-            viper.WriteConfigAs(filepath.Join(cfgDir, "config.yaml"))
-            return
-        }
-    }
+		if err := viper.ReadInConfig(); err != nil {
+			fmt.Fprintln(os.Stderr, "⚠️  no se encontró config, creando en", cfgDir)
+			os.MkdirAll(cfgDir, 0o755)
+			_ = viper.WriteConfigAs(filepath.Join(cfgDir, "config.yaml"))
+		}
+	}
 
-    if f := viper.ConfigFileUsed(); f != "" {
-        //fmt.Fprintln(os.Stderr, "✅ usando config file:", f)
-    }
-    viper.AutomaticEnv()
+	viper.AutomaticEnv()
+
+	// Cargar info.yml y commitMessage.yml desde la raíz del repo
+	repoRoot, err := git.FindRepoRoot()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "⚠️  No estás en un repo git:", err)
+		return
+	}
+
+	// Ruta a info.yml
+	infoFile = filepath.Join(repoRoot, "info.yml")
+	if _, err := os.Stat(infoFile); err == nil {
+		var infoData map[string]interface{}
+		content, err := os.ReadFile(infoFile)
+		if err == nil && yaml.Unmarshal(content, &infoData) == nil {
+			viper.Set("info", infoData)
+		} else {
+			fmt.Fprintln(os.Stderr, "⚠️  No se pudo leer info.yml:", err)
+		}
+	}
+
+	// Ruta a commitMessage.yml
+	commitMsgFile = filepath.Join(repoRoot, "commitMessage.yml")
+	if _, err := os.Stat(commitMsgFile); err == nil {
+		var msgData map[string]interface{}
+		content, err := os.ReadFile(commitMsgFile)
+		if err == nil && yaml.Unmarshal(content, &msgData) == nil {
+			viper.Set("commitMessage", msgData)
+		} else {
+			fmt.Fprintln(os.Stderr, "⚠️  No se pudo leer commitMessage.yml:", err)
+		}
+	}
 }
-
