@@ -7,14 +7,14 @@ import (
 
 	"github.com/spf13/cobra"
 	"gitlab.com/0xleonz/gitz/internal/git"
-	"gitlab.com/0xleonz/gitz/internal/utils"
 	"gitlab.com/0xleonz/gitz/internal/inputs"
 	"gitlab.com/0xleonz/gitz/internal/types"
+	"gitlab.com/0xleonz/gitz/internal/utils"
 	"gopkg.in/yaml.v3"
 )
 
 type CommitMessage struct {
-	Changes     []types.Change          `yaml:"changes"`
+	Changes     []types.Change    `yaml:"changes"`
 	Issue       string            `yaml:"issue"`
 	Subject     string            `yaml:"subject"`
 	Description []string          `yaml:"description"`
@@ -25,7 +25,6 @@ var messageCmd = &cobra.Command{
 	Use:   "message",
 	Short: "Crea y maneja mensajes de commit enriquecidos",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		// fmt.Println(utils.Colorize("🧠 Iniciando editor interactivo sin TUI...", utils.Cyan))
 		return runTextEditor()
 	},
 }

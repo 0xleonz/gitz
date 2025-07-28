@@ -6,8 +6,8 @@ import (
 	"os"
 	"strings"
 
-	"gitlab.com/0xleonz/gitz/internal/utils"
 	"gitlab.com/0xleonz/gitz/internal/types"
+	"gitlab.com/0xleonz/gitz/internal/utils"
 )
 
 func Subject(current string) string {
@@ -154,10 +154,10 @@ func Footer(current map[string]string) map[string]string {
 func Issue(current string) string {
 	reader := bufio.NewReader(os.Stdin)
 
-	defaultIssue := "JIRA-1912"
+	exampleIssue := "JIRA-1912"
 	label := current
 	if label == "" {
-		label = defaultIssue
+		label = exampleIssue
 	}
 
 	fmt.Printf("📌 Issue ID [%s]: ", utils.Colorize(label, utils.Cyan))
@@ -168,7 +168,7 @@ func Issue(current string) string {
 		return input
 	}
 	if current == "" {
-		return defaultIssue
+		return ""
 	}
 	return current
 }
