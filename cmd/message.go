@@ -1,15 +1,15 @@
 package cmd
 
 import (
-	"bufio"
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+
 	"gitlab.com/0xleonz/gitz/internal/git"
+	"gitlab.com/0xleonz/gitz/internal/inputs"
 	"gitlab.com/0xleonz/gitz/internal/types"
 	"gitlab.com/0xleonz/gitz/internal/utils"
 )
@@ -31,7 +31,7 @@ var (
 
 var messageCmd = &cobra.Command{
 	Use:   "message",
-	Short: "Edita o muestra el commitMessage.yml",
+	Short: "Edit o shows the commitMessage.yml",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		repoRoot, err := git.FindRepoRoot()
 		if err != nil {
@@ -40,20 +40,17 @@ var messageCmd = &cobra.Command{
 		path := filepath.Join(repoRoot, "commitMessage.yml")
 
 		var msg types.CommitMessage
-		// Maybe change viper to yaml3
 		if v := viper.Get("commitMessage"); v != nil {
-			m, ok := utils.DecodeCommitMessage(v)
-			if ok {
+			if m, ok := utils.DecodeCommitMessage(v); ok {
 				msg = m
 			}
 		} else if !utils.IsEmptyOrMissing(path) {
-			m, err := utils.LoadCommitMessage(path)
-			if err == nil {
+			if m, err := utils.LoadCommitMessage(path); err == nil {
 				msg = m
 			}
 		}
 
-		// Mostrar si aplica
+		// Flags que solo muestran
 		if showFlag {
 			printCommitMessage(msg)
 			return nil
@@ -78,155 +75,58 @@ var messageCmd = &cobra.Command{
 			return nil
 		}
 
-		r := bufio.NewReader(os.Stdin)
-
+		// Flags que modifican directamente
 		if addSubject {
-			msg.Subject = promptWithDefault("📝 Subject:", utils.Pink, msg.Subject, "feat: agregar validación de email")
+			msg.Subject = inputs.Subject(msg.Subject)
 			saveCommitMessage(path, msg)
 			printCommitMessage(msg)
 			return nil
 		}
 		if issueFlag {
-			msg.Issue = promptWithDefault("🔗 Issue:", utils.Purple, msg.Issue, "#123")
+			msg.Issue = inputs.Issue(msg.Issue)
 			saveCommitMessage(path, msg)
 			printCommitMessage(msg)
 			return nil
 		}
 		if fixFlag {
-			msg.Changes = append(msg.Changes, types.Change{Type: "fix", Summary: prompt("Resumen del fix (ej: arregla validación de token):")})
+			inputs.Fix(&msg)
 			saveCommitMessage(path, msg)
 			printCommitMessage(msg)
 			return nil
 		}
 		if refactorFlag {
-			msg.Changes = append(msg.Changes, types.Change{Type: "refactor", Summary: prompt("Resumen del refactor (ej: simplifica lógica de parser):")})
+			inputs.Refactor(&msg)
 			saveCommitMessage(path, msg)
 			printCommitMessage(msg)
 			return nil
 		}
 		if descriptionFlag {
-			fmt.Println(utils.Colorize("📄 Description actual:", utils.Yellow))
-			for _, d := range msg.Description {
-				fmt.Println("  " + d)
-			}
-			fmt.Println(utils.Colorize("📄 Agrega nuevas líneas (ENTER vacío para terminar):", utils.Green))
-			for {
-				fmt.Print("  > ")
-				line, _ := r.ReadString('\n')
-				line = strings.TrimSpace(line)
-				if line == "" {
-					break
-				}
-				msg.Description = append(msg.Description, line)
-			}
+			msg.Description = inputs.Description(msg.Description)
 			saveCommitMessage(path, msg)
 			printCommitMessage(msg)
 			return nil
 		}
 		if addChangeInput != "" {
-			parts := strings.SplitN(addChangeInput, ":", 2)
-			if len(parts) != 2 {
-				return fmt.Errorf("formato inválido para --add-change. Usa tipo:resumen")
+			if err := inputs.AddChange(&msg, addChangeInput); err != nil {
+				return err
 			}
-			msg.Changes = append(msg.Changes, types.Change{
-				Type:    strings.TrimSpace(parts[0]),
-				Summary: strings.TrimSpace(parts[1]),
-			})
 			saveCommitMessage(path, msg)
 			printCommitMessage(msg)
 			return nil
 		}
 		if addChangesFlag {
-			fmt.Println(utils.Colorize("🔧 Cambios actuales:", utils.Yellow))
-			for _, c := range msg.Changes {
-				fmt.Printf("  - %s: %s\n", c.Type, c.Summary)
-			}
-			fmt.Println(utils.Colorize("🔧 Agrega cambios nuevos (tipo:resumen, ENTER vacío para terminar):", utils.Cyan))
-			for {
-				fmt.Print("  - ")
-				line, _ := r.ReadString('\n')
-				line = strings.TrimSpace(line)
-				if line == "" {
-					break
-				}
-				parts := strings.SplitN(line, ":", 2)
-				if len(parts) != 2 {
-					fmt.Println(utils.Colorize("  ⚠️  Formato inválido. Usa tipo:resumen", utils.Red))
-					continue
-				}
-				msg.Changes = append(msg.Changes, types.Change{
-					Type:    strings.TrimSpace(parts[0]),
-					Summary: strings.TrimSpace(parts[1]),
-				})
-			}
+			inputs.Cambios(&msg)
 			saveCommitMessage(path, msg)
 			printCommitMessage(msg)
 			return nil
 		}
 
-		// Modo completo interactivo
-		msg.Subject = promptWithDefault("📝 Subject:", utils.Pink, msg.Subject, "feat: agregar validación")
-
-		fmt.Println(utils.Colorize("📄 Description (ENTER vacío para terminar):", utils.Green))
-		for _, d := range msg.Description {
-			fmt.Println("  [actual] " + utils.Colorize(d, utils.Yellow))
-		}
-		desc := []string{}
-		for {
-			fmt.Print("  > ")
-			line, _ := r.ReadString('\n')
-			line = strings.TrimSpace(line)
-			if line == "" {
-				break
-			}
-			desc = append(desc, line)
-		}
-		msg.Description = append(msg.Description, desc...)
-
-		fmt.Println(utils.Colorize("🔧 Changes (tipo:resumen, ENTER vacío para terminar):", utils.Cyan))
-		for _, c := range msg.Changes {
-			fmt.Printf("  [actual] - %s: %s\n", utils.Colorize(c.Type, utils.Yellow), c.Summary)
-		}
-		for {
-			fmt.Print("  - ")
-			line, _ := r.ReadString('\n')
-			line = strings.TrimSpace(line)
-			if line == "" {
-				break
-			}
-			parts := strings.SplitN(line, ":", 2)
-			if len(parts) != 2 {
-				fmt.Println(utils.Colorize("  ⚠️  Formato inválido. Usa tipo:resumen", utils.Red))
-				continue
-			}
-			msg.Changes = append(msg.Changes, types.Change{
-				Type:    strings.TrimSpace(parts[0]),
-				Summary: strings.TrimSpace(parts[1]),
-			})
-		}
-
-		fmt.Println(utils.Colorize("🔻 Footer (clave:valor, ENTER vacío para terminar):", utils.Yellow))
-		for k, v := range msg.Footer {
-			fmt.Printf("  [actual] %s: %s\n", k, v)
-		}
-		newFooter := msg.Footer
-		for {
-			fmt.Print("  - ")
-			line, _ := r.ReadString('\n')
-			line = strings.TrimSpace(line)
-			if line == "" {
-				break
-			}
-			parts := strings.SplitN(line, ":", 2)
-			if len(parts) != 2 {
-				fmt.Println(utils.Colorize("  ⚠️  Formato inválido. Usa clave:valor", utils.Red))
-				continue
-			}
-			newFooter[strings.TrimSpace(parts[0])] = strings.TrimSpace(parts[1])
-		}
-		msg.Footer = newFooter
-
-		msg.Issue = promptWithDefault("🔗 Issue:", utils.Purple, msg.Issue, "#123")
+		// Modo interactivo completo
+		msg.Subject = inputs.Subject(msg.Subject)
+		msg.Description = inputs.Description(msg.Description)
+		inputs.Cambios(&msg)
+		msg.Footer = inputs.Footer(msg.Footer)
+		msg.Issue = inputs.Issue(msg.Issue)
 
 		saveCommitMessage(path, msg)
 		printCommitMessage(msg)
@@ -248,25 +148,6 @@ func init() {
 	messageCmd.Flags().BoolVar(&refactorFlag, "refactor", false, "Agrega un cambio de tipo refactor")
 	messageCmd.Flags().StringVar(&addChangeInput, "add-change", "", "Agrega un cambio en formato tipo:resumen")
 	messageCmd.Flags().BoolVar(&addChangesFlag, "add-changes", false, "Agrega múltiples cambios de forma interactiva")
-}
-
-func prompt(label string) string {
-	fmt.Print(utils.Colorize(label+" ", utils.Pink))
-	r := bufio.NewReader(os.Stdin)
-	line, _ := r.ReadString('\n')
-	return strings.TrimSpace(line)
-}
-
-func promptWithDefault(label, color, def, example string) string {
-	if def != "" {
-		fmt.Printf("%s %s %s\n", utils.Colorize(label, color), utils.Colorize("[actual]", utils.Yellow), def)
-	} else if example != "" {
-		fmt.Printf("%s %s\n", utils.Colorize(label, color), utils.Colorize("[ej: "+example+"]", utils.Blue))
-	}
-	fmt.Print("  > ")
-	r := bufio.NewReader(os.Stdin)
-	line, _ := r.ReadString('\n')
-	return strings.TrimSpace(line)
 }
 
 func saveCommitMessage(path string, msg types.CommitMessage) {

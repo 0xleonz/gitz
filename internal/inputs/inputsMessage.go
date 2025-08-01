@@ -10,51 +10,41 @@ import (
 	"gitlab.com/0xleonz/gitz/internal/utils"
 )
 
+// =========================
+// === CAMPOS PRINCIPALES ===
+// =========================
+
 func Subject(current string) string {
-	reader := bufio.NewReader(os.Stdin)
-
-	if current == "" {
-		example := "Add login redirect after auth"
-		fmt.Printf("📝 Subject (e.g. %s): ", utils.Colorize(example, utils.Yellow))
-	} else {
-		fmt.Printf("📝 Subject [%s]: ", utils.Colorize(current, utils.Red))
+	val := promptField("📝 Subject:", utils.Pink, current, utils.DefaultSubject)
+	if val == "" {
+		return current
 	}
-
-	input, _ := reader.ReadString('\n')
-	input = strings.TrimSpace(input)
-
-	if input != "" {
-		return input
-	}
-	return current
+	return val
 }
 
-func Description(current []string) []string {
-	reader := bufio.NewReader(os.Stdin)
+func Issue(issue string) string {
+	return promptField("🔗 Issue:", utils.Purple, issue, utils.DefaultIssue)
+}
 
-	fmt.Println("📖 Description (ENTER vacío para terminar):")
+func Description(desc []string) []string {
+	r := bufio.NewReader(os.Stdin)
 
-	if len(current) > 0 {
-		fmt.Println(utils.Colorize("Descripción actual:", utils.Yellow))
-		for _, d := range current {
-			fmt.Println("•", d)
+	if len(desc) > 0 {
+		fmt.Println(utils.Colorize(utils.PromptDescriptionCurrent, utils.Yellow))
+		for _, d := range desc {
+			fmt.Println("  " + utils.Colorize(d, utils.Yellow))
 		}
 	} else {
-		example := []string{
-			"Refactor login controller to improve error handling.",
-			"Add coverage for edge cases in session middleware.",
-			"Hacked the mainframe like pirate software",
-		}
-		fmt.Println(utils.Colorize("Ejemplo:", utils.Yellow))
-		for _, e := range example {
-			fmt.Println("•", e)
+		fmt.Println(utils.Colorize("📄 No hay descripción actual. Usando ejemplo por defecto:", utils.Cyan))
+		for _, d := range utils.DefaultDescription {
+			fmt.Println("  " + utils.Colorize("[ejemplo] "+d, utils.Blue))
 		}
 	}
 
-	var desc []string
+	fmt.Println(utils.Colorize(utils.PromptDescriptionAdd, utils.Green))
 	for {
-		fmt.Print("- ")
-		line, _ := reader.ReadString('\n')
+		fmt.Print("  > ")
+		line, _ := r.ReadString('\n')
 		line = strings.TrimSpace(line)
 		if line == "" {
 			break
@@ -65,110 +55,124 @@ func Description(current []string) []string {
 	return desc
 }
 
-func Changes(current []types.Change) []types.Change {
-	reader := bufio.NewReader(os.Stdin)
+// =======================
+// === CAMBIOS / CHANGES ===
+// =======================
 
-	fmt.Println("🔧 Changes (formato tipo:resumen, ENTER vacío para terminar):")
-
-	if len(current) > 0 {
-		fmt.Println(utils.Colorize("Cambios actuales:", utils.Yellow))
-		for _, ch := range current {
-			fmt.Printf("• %s:%s\n", ch.Type, ch.Summary)
+func Cambios(msg *types.CommitMessage) {
+	if len(msg.Changes) > 0 {
+		fmt.Println(utils.Colorize("🔧 Cambios actuales:", utils.Yellow))
+		for _, c := range msg.Changes {
+			fmt.Printf("  - %s: %s\n", utils.Colorize(c.Type, utils.Yellow), c.Summary)
 		}
 	} else {
-		fmt.Println(utils.Colorize("Ejemplos:", utils.Yellow))
-		examples := []string{
-			"fix:handle token expiry",
-			"refactor:split handlers into separate files",
-			"docs:add usage example for login endpoint",
-		}
-		for _, e := range examples {
-			fmt.Println("•", e)
+		fmt.Println(utils.Colorize("🔧 No hay cambios actuales. Ejemplos:", utils.Cyan))
+		for _, c := range utils.DefaultChanges {
+			fmt.Printf("  [ejemplo] - %s: %s\n", utils.Colorize(c.Type, utils.Blue), c.Summary)
 		}
 	}
 
-	var changes []types.Change
+	fmt.Println(utils.Colorize("🔧 Agrega cambios nuevos (tipo:resumen, ENTER vacío para terminar):", utils.Cyan))
+	r := bufio.NewReader(os.Stdin)
 	for {
-		fmt.Print("- ")
-		line, _ := reader.ReadString('\n')
+		fmt.Print("  - ")
+		line, _ := r.ReadString('\n')
 		line = strings.TrimSpace(line)
 		if line == "" {
 			break
 		}
 		parts := strings.SplitN(line, ":", 2)
 		if len(parts) != 2 {
-			fmt.Println(utils.Colorize("❌ Formato inválido. Usa tipo:resumen", utils.Red))
+			fmt.Println(utils.Colorize("  ⚠️  Formato inválido. Usa tipo:resumen", utils.Red))
 			continue
 		}
-		changes = append(changes, types.Change{
+		msg.Changes = append(msg.Changes, types.Change{
 			Type:    strings.TrimSpace(parts[0]),
 			Summary: strings.TrimSpace(parts[1]),
 		})
 	}
-
-	return changes
 }
 
-func Footer(current map[string]string) map[string]string {
-	reader := bufio.NewReader(os.Stdin)
+func AddChange(msg *types.CommitMessage, input string) error {
+	parts := strings.SplitN(input, ":", 2)
+	if len(parts) != 2 {
+		return fmt.Errorf("formato inválido para --add-change. Usa tipo:resumen")
+	}
+	msg.Changes = append(msg.Changes, types.Change{
+		Type:    strings.TrimSpace(parts[0]),
+		Summary: strings.TrimSpace(parts[1]),
+	})
+	return nil
+}
 
-	fmt.Println("🧾 Footer (clave:valor, ENTER vacío para terminar):")
+func Fix(msg *types.CommitMessage) {
+	summary := prompt("Resumen del fix (ej: arregla validación de token):")
+	msg.Changes = append(msg.Changes, types.Change{Type: "fix", Summary: summary})
+}
+
+func Refactor(msg *types.CommitMessage) {
+	summary := prompt("Resumen del refactor (ej: simplifica lógica de parser):")
+	msg.Changes = append(msg.Changes, types.Change{Type: "refactor", Summary: summary})
+}
+
+// ====================
+// === FOOTER SECTION ===
+// ====================
+
+func Footer(current map[string]string) map[string]string {
+	newFooter := current
+	r := bufio.NewReader(os.Stdin)
+
 	if len(current) > 0 {
-		fmt.Println(utils.Colorize("Footers actuales:", utils.Yellow))
+		fmt.Println(utils.Colorize("🔻 Footer actual:", utils.Yellow))
 		for k, v := range current {
-			fmt.Printf("• %s: %s\n", k, v)
+			fmt.Printf("  [actual] %s: %s\n", k, v)
 		}
 	} else {
-		fmt.Println(utils.Colorize("Ejemplos:", utils.Yellow))
-		examples := []string{
-			"Signed-off-by: Edgar M <edgar@example.com>",
-			"Migration step: clear user sessions",
-			"Reviewed-by: QA team",
-		}
-		for _, e := range examples {
-			fmt.Println("•", e)
+		fmt.Println(utils.Colorize("🔻 Footer vacío. Ejemplos:", utils.Cyan))
+		for k, v := range utils.DefaultFooter {
+			fmt.Printf("  [ejemplo] %s: %s\n", utils.Colorize(k, utils.Blue), v)
 		}
 	}
 
-	result := make(map[string]string)
+	fmt.Println(utils.Colorize("🔻 Agrega footers (clave:valor, ENTER vacío para terminar):", utils.Green))
 	for {
-		fmt.Print("- ")
-		line, _ := reader.ReadString('\n')
+		fmt.Print("  - ")
+		line, _ := r.ReadString('\n')
 		line = strings.TrimSpace(line)
 		if line == "" {
 			break
 		}
 		parts := strings.SplitN(line, ":", 2)
-		if len(parts) == 2 {
-			key := strings.TrimSpace(parts[0])
-			val := strings.TrimSpace(parts[1])
-			result[key] = val
-		} else {
-			fmt.Println(utils.Colorize("❌ Formato inválido. Usa clave:valor", utils.Red))
+		if len(parts) != 2 {
+			fmt.Println(utils.Colorize("  ⚠️  Formato inválido. Usa clave:valor", utils.Red))
+			continue
 		}
+		newFooter[strings.TrimSpace(parts[0])] = strings.TrimSpace(parts[1])
 	}
 
-	return result
+	return newFooter
 }
 
-func Issue(current string) string {
-	reader := bufio.NewReader(os.Stdin)
+// ==================
+// === HELPERS ======
+// ==================
 
-	exampleIssue := "JIRA-1912"
-	label := current
-	if label == "" {
-		label = exampleIssue
-	}
+func prompt(label string) string {
+	fmt.Print(utils.Colorize(label+" ", utils.Pink))
+	r := bufio.NewReader(os.Stdin)
+	line, _ := r.ReadString('\n')
+	return strings.TrimSpace(line)
+}
 
-	fmt.Printf("📌 Issue ID [%s]: ", utils.Colorize(label, utils.Cyan))
-	input, _ := reader.ReadString('\n')
-	input = strings.TrimSpace(input)
-
-	if input != "" {
-		return input
+func promptField(label, color, current, example string) string {
+	if current != "" {
+		fmt.Printf("%s %s \n", utils.Colorize(label, color), current)
+	} else if example != "" {
+		fmt.Printf("%s %s\n", utils.Colorize(label, color), utils.Colorize("[ej: "+example+"]", utils.Blue))
 	}
-	if current == "" {
-		return ""
-	}
-	return current
+	fmt.Print("  > ")
+	r := bufio.NewReader(os.Stdin)
+	line, _ := r.ReadString('\n')
+	return strings.TrimSpace(line)
 }

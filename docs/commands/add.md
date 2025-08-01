@@ -15,8 +15,10 @@ Internamente, el comando utiliza `git ls-files` para detectar los archivos no st
 
 | Flag        | Descripción                                 |
 |-------------|---------------------------------------------|
-| `--confirm` | Pregunta por cada archivo si se debe agregar |
-| `--all`     | Agrega todos los archivos sin preguntar      |
+| `--confirm`     | Pregunta por cada archivo si se debe agregar |
+| `--all`         | Agrega todos los archivos sin preguntar      |
+| `--dry-run`     | Simula dry-run     |
+| `--verbose`     | Explicito      |
 
 > ⚠️ Si no se usa ninguna opción, el comando entra en modo automático y agrega todo excepto archivos ignorados o sin cambios.
 

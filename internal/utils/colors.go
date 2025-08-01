@@ -1,4 +1,4 @@
-// Catpuccin colors
+// Catpuccin mocha colors
 package utils
 
 import "fmt"
@@ -17,4 +17,29 @@ var (
 // Apply color to text
 func Colorize(text, color string) string {
 	return fmt.Sprintf("%s%s%s", color, text, Reset)
+}
+
+// Print a list of strings in the same line with color, wrapping at maxColumn characters
+func OnlineWithColor(text []string, color string, separator string, maxColumn int) string {
+	var result string
+	lineLen := 0
+
+	for i, word := range text {
+		colored := Colorize(word, color)
+		sep := ""
+		if i != len(text)-1 {
+			sep = separator
+		}
+		segment := colored + sep
+		segmentLen := len(word) + len(separator)
+
+		if lineLen+segmentLen > maxColumn && lineLen > 0 {
+			result += "\n"
+			lineLen = 0
+		}
+		result += segment
+		lineLen += segmentLen
+	}
+
+	return result
 }
