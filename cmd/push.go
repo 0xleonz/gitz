@@ -12,8 +12,6 @@ import (
 )
 
 var (
-	dryRun       bool
-	verbose      bool
 	filterRemote string
 	filterBranch string
 	confirmPush  bool
@@ -135,8 +133,6 @@ func findRepoRoot() (string, error) {
 }
 
 func init() {
-	pushCmd.Flags().BoolVar(&dryRun, "dry-run", false, "Muestra los comandos sin ejecutarlos")
-	pushCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Muestra salida detallada")
 	pushCmd.Flags().StringVar(&filterRemote, "remote", "", "Filtra por remoto")
 	pushCmd.Flags().StringVar(&filterBranch, "branch", "", "Filtra por rama")
 	pushCmd.Flags().BoolVarP(&confirmPush, "confirm", "c", false, "Pide confirmación antes de cada push")

@@ -1,24 +1,27 @@
 package git
 
-import(
+import (
 	"fmt"
-	"path/filepath"
 	"os"
+	"path/filepath"
 )
+
+// just going up to find fir .git
 func FindRepoRoot() (string, error) {
 	dir, err := os.Getwd()
 	if err != nil {
 		return "", err
 	}
 	for {
-		if _, err := os.Stat(filepath.Join(dir, ".git")); err == nil {
+		gitPath := filepath.Join(dir, ".git")
+		if _, err := os.Stat(gitPath); err == nil {
 			return dir, nil
 		}
-		parent := filepath.Dir(dir)
-		if parent == dir {
+		if parent := filepath.Dir(dir); parent == dir {
 			break
+		} else {
+			dir = parent
 		}
-		dir = parent
 	}
 	return "", fmt.Errorf("no se encontró .git en ningún directorio padre")
 }

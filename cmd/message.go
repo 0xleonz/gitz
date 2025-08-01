@@ -40,6 +40,7 @@ var messageCmd = &cobra.Command{
 		path := filepath.Join(repoRoot, "commitMessage.yml")
 
 		var msg types.CommitMessage
+		// Maybe change viper to yaml3
 		if v := viper.Get("commitMessage"); v != nil {
 			m, ok := utils.DecodeCommitMessage(v)
 			if ok {

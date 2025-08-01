@@ -11,9 +11,13 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-var cfgFile string
-var infoFile string
-var commitMsgFile string
+var (
+	cfgFile       string
+	infoFile      string
+	commitMsgFile string
+	dryRun        bool
+	verbose       bool
+)
 
 var rootCmd = &cobra.Command{
 	Use:   "gitz",
@@ -33,6 +37,8 @@ func Execute() {
 func init() {
 	cobra.OnInitialize()
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.config/gitz/config.yaml)")
+	rootCmd.PersistentFlags().BoolVarP(&dryRun, "dry-run", "d", false, "Simula acciones sin aplicar cambios")
+	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Muestra operaciones realizadas")
 }
 
 func initConfig() {
