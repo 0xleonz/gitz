@@ -15,10 +15,10 @@ var quickCmd = &cobra.Command{
 	Short: "check + add + commit + push en una sola línea",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Paso 1: check
-		if err := utils.Call("check"); err != nil {
-			fmt.Println("🟡 No hay cambios o check falló. Abortando.")
-			return nil
-		}
+		// if err := utils.Call("check"); err != nil {
+		// 	fmt.Println("🟡 No hay cambios o check falló. Abortando.")
+		// 	return nil
+		// }
 
 		// Paso 2: add
 		addArgs := []string{"add"}
@@ -30,7 +30,19 @@ var quickCmd = &cobra.Command{
 			return nil
 		}
 
-		// Paso 3: commit
+		// Paso 3: generar mensaje (si no se pasó --short)
+		if quickShortMsg == "" {
+			if err := utils.Call("message", "--add-subject"); err != nil {
+				fmt.Println("❌ Error en 'gitz message --add-subject':", err)
+				return err
+			}
+			if err := utils.Call("message", "--description"); err != nil {
+				fmt.Println("❌ Error en 'gitz message --description':", err)
+				return err
+			}
+		}
+
+		// Paso 4: commit
 		commitArgs := []string{"commit"}
 		if quickShortMsg != "" {
 			commitArgs = append(commitArgs, "--short", quickShortMsg)
@@ -40,7 +52,7 @@ var quickCmd = &cobra.Command{
 			return err
 		}
 
-		// Paso 4: push
+		// Paso 5: push
 		pushArgs := []string{"push"}
 		if quickConfirm {
 			pushArgs = append(pushArgs, "--confirm")
