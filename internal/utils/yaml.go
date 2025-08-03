@@ -20,7 +20,20 @@ func LoadCommitMessage(path string) (types.CommitMessage, error) {
 
 func IsEmptyOrMissing(path string) bool {
 	data, err := os.ReadFile(path)
-	return err != nil || strings.TrimSpace(string(data)) == ""
+	if err != nil {
+		return true // archivo no existe o no se puede leer
+	}
+
+	var msg types.CommitMessage
+	if err := yaml.Unmarshal(data, &msg); err != nil {
+		return true // no se puede parsear => consideramos inválido
+	}
+
+	return len(msg.Changes) == 0 &&
+		strings.TrimSpace(msg.Issue) == "" &&
+		strings.TrimSpace(msg.Subject) == "" &&
+		len(msg.Description) == 0 &&
+		len(msg.Footer) == 0
 }
 
 func MarshalYAML(msg types.CommitMessage) ([]byte, error) {
